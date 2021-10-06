@@ -1,0 +1,97 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+  tasks:
+  - name: Waiting for ssh
+    wait_for_connection:
+      timeout: 900
+  - name: check OS version
+    debug: var=ansible_os_family
+  - block:
+    - name: dnf
+      dnf:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - lsof
+        - expect
+    - name: firewalld-ports
+      ansible.posix.firewalld:
+        zone: public
+        port: "{{ item }}"
+        permanent: yes
+        immediate: yes
+        state: enabled
+      with_items:
+        - 80/tcp
+        - 443/tcp
+        - 8800/tcp
+        - 5432/tcp
+        - 9000/tcp
+        - 9090/tcp
+        - 32769/tcp
+        - 32770/tcp
+        - 9880/tcp
+        - 9874-9879/tcp
+    - name: firewalld-zone
+      ansible.posix.firewalld:
+        zone: trusted
+        interface: docker0
+        permanent: yes
+        state: enabled
+    - name: copy expect script
+      ansible.builtin.copy:
+        src: replicated.exp_centos
+        dest: /tmp/replicated.exp
+        owner: root
+        group: root
+        mode: '0755'
+    when: ansible_os_family == "RedHat"
+
+  - block:
+    - name: apt install expect
+      apt:
+        name: expect
+        state: present
+    - name: copy expect script
+      ansible.builtin.copy:
+        src: replicated.exp_ubuntu
+        dest: /tmp/replicated.exp
+        owner: root
+        group: root
+        mode: '0755'
+    when: ansible_os_family == "Debian"
+  
+  - name: upload license
+    ansible.builtin.copy:
+      src: "{{ license }}"
+      dest: /tmp
+      owner: root
+      group: root
+      mode: '0755'
+  - name: selfsigned key and cert
+    ansible.builtin.shell:
+      cmd:  openssl req -new -x509 -newkey rsa:4096 -sha256 -nodes -days 365 -keyout /tmp/platform.key -out /tmp/platform.crt -subj "/CN={{ fqdn }}" -addext "subjectAltName=IP:{{ public_ip }},DNS:{{ fqdn }}"
+  - name: expect script
+    shell: /tmp/replicated.exp 
+  - name: wait for replicated
+    wait_for:
+      host: localhost
+      port: 9873
+      delay: 30
+  - name: replicated console key and cert
+    shell: replicated console cert set {{ fqdn }} /tmp/platform.key /tmp/platform.crt
+ # - name: replicated console password
+ #   shell: echo {{ item }} | replicatedctl console-auth import
+ #   with_items:
+ #     - '{\"Password\"\: {\"Password\": \"{{ console_password }}\" }}'
+  # - name: replicated license
+  #   shell: replicatedctl license-load < /tmp/*.rli
+  # - name: replicated preflight check
+  #   shell: replicatedctl preflight run
+  # - name: replicated apply app
+  #   shell: replicatedctl app apply-config
+
+#ybplatform register api
+#ybplatform cloud provider api

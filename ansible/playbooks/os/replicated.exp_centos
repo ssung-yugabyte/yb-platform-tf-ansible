@@ -1,0 +1,13 @@
+#!/bin/expect -f
+set timeout -1
+spawn bash -c "curl -sSL https://get.replicated.com/docker | sudo bash"
+
+expect "Continue with firewalld*"
+send -- "\r"
+
+expect "Enter desired number*"
+send -- "0\r"
+
+expect "Does this machine require a proxy*"
+send -- "\r"
+expect eof
