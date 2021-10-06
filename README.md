@@ -15,13 +15,13 @@ Following IAM roles are required for the Service Account
 * Clone this repo to the local workstation
 
 ```
-$ git clone https://github.com/srinivasa-vasu/terraform-gcp-ybdp.git
+$ git clone https://github.com/ssung-yugabyte/yb-plaform-tf-ansible.git
 ```
 
 * Change directory to the cloned repo
 
 ```
-$ cd terraform-gcp-ybdp
+$ cd yb-platform-tf-ansible
 ```
 
 * Create `terraform.tfvars` file with the following info populated (or update `sample.terraform.tfvars` file appropriately and rename it to `terraform.tfvars`)
@@ -36,32 +36,7 @@ credentials     = "# gcp service account credential file path"
 # ssh keys to connect to the bastion and replicated instances
 ssh_private_key = "# ssh private key file path"
 ssh_public_key  = "# ssh public key file path"
-ssh_user        = "# ssh user name"
-# key and cert for the replicated hostname; could be self-signed or ca signed
-replicated_host_key     = "# replicated instance host private key path"
-replicated_host_cert    = "# replicated instance host cert path"
-license_key             = "# platform license key path"
-hostname                = "# replicated instance host name; this will be suffixed with the `domain` name; just mention the hostname without the domain"
-
-# domain inputs
-zone   = "# name of the existing/new zone"
-domain = "# domain name like nip.io"
------------------------------------------------mandatory inputs-----------------------------------------------
-dns_on = "# if true, would create a new managed hosted zone"
-
-
-region = "# region name where the node(s) should be spawned"
-
-# vpc inputs
-vpc_on              = "# if 'true', resources would be provisioned in the existing vpc; if not, will create a new vpc and 2 subnets; 1 for management instances and the other for the universe"
-vpc_network         = "# vpc network name; existing/new network name"
-
-# bastion host setting
-bastion_on   = "# flag to spawn host. set to 'true' if the access to ybdp is through the bastion host"
-
-ha_on = "# flag to determine ha for the platform"
-
-identifier  = "# unique identifier for the run. All the resources would have this identifier"
+ssh_user        = "# ssh user name
 ```
 
 
@@ -104,7 +79,5 @@ This terraform-module manages the following GCP resources
 - vpc
 - subnets
 - hosted zone
-- load balancer
 - compute instances
-- nat router
 - firewall
