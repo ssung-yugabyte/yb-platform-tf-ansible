@@ -1,0 +1,18 @@
+# GCP project info
+project      = ""
+control_name = ""
+credentials  = ""
+
+# ssh keys to connect to the bastion and replicated instances
+ssh_private_key = ""
+ssh_public_key  = ""
+ssh_user        = ""
+
+# The region name where the nodes should be spawned.
+#regions = ["us-central1"]
+
+# if `vpc_on` is false, then `vpc_network` should already exist 
+vpc_network = "ybdp"
+
+# yugabyte platform (replicated) license
+license_key = ""
