@@ -11,6 +11,10 @@ Following IAM roles are required for the Service Account
 - Service Account Admin
 - Service Account User
 
+You need to install terraform and ansible cli in your local env. 
+- terraform installed
+- ansible installed
+
 ## Initialization
 * Clone this repo to the local workstation
 
