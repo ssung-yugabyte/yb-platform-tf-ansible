@@ -48,7 +48,18 @@ resource "null_resource" "andible_playbook_os" {
     depends_on = [
         local_file.ansible_host,
         module.compute.platform,
+        module.network.control_subnet,
+        module.dns.platform_dns,
     ]
+    provisioner "remote-exec" {
+        connection {
+            host = module.compute.public_ip
+            user = var.ssh_user
+            private_key = "${file(var.ssh_private_key)}"
+        }
+
+        inline = ["echo 'connected!'"]
+    }
     provisioner "local-exec" {
         command = "ansible-playbook ansible/playbooks/os/main.yaml --extra-vars=\"license=$license console_password=$console_password fqdn=$fqdn public_ip=$public_ip\""
         environment = {

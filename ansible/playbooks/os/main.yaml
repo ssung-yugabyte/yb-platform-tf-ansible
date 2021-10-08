@@ -1,6 +1,7 @@
 ---
-- hosts: all
+- hosts: ybware
   gather_facts: yes
+  gather_timeout: 120
   become: yes
   tasks:
   - name: Waiting for ssh
@@ -24,7 +25,6 @@
         immediate: yes
         state: enabled
       with_items:
-        - 80/tcp
         - 443/tcp
         - 8800/tcp
         - 5432/tcp
@@ -48,7 +48,6 @@
         group: root
         mode: '0755'
     when: ansible_os_family == "RedHat"
-
   - block:
     - name: apt install expect
       apt:
@@ -61,37 +60,87 @@
         owner: root
         group: root
         mode: '0755'
+    - name: expect script
+      shell: /tmp/replicated.exp 
     when: ansible_os_family == "Debian"
-  
+  - name: selfsigned key and cert
+    tags: replicated
+    ansible.builtin.shell:
+      cmd:  openssl req -new -x509 -newkey rsa:4096 -sha256 -nodes -days 365 -keyout /tmp/platform.key -out /tmp/platform.crt -subj "/CN={{ fqdn }}" -addext "subjectAltName=IP:{{ public_ip }},DNS:{{ fqdn }}"
   - name: upload license
     ansible.builtin.copy:
       src: "{{ license }}"
-      dest: /tmp
+      dest: /tmp/test.rli
       owner: root
       group: root
       mode: '0755'
-  - name: selfsigned key and cert
-    ansible.builtin.shell:
-      cmd:  openssl req -new -x509 -newkey rsa:4096 -sha256 -nodes -days 365 -keyout /tmp/platform.key -out /tmp/platform.crt -subj "/CN={{ fqdn }}" -addext "subjectAltName=IP:{{ public_ip }},DNS:{{ fqdn }}"
-  - name: expect script
-    shell: /tmp/replicated.exp 
+    register: resultcopy
   - name: wait for replicated
-    wait_for:
-      host: localhost
+    ansible.builtin.wait_for:
+      host: 0.0.0.0
       port: 9873
+      state: started
       delay: 30
+      timeout: 300
+    register: replicated_status
+  - debug:
+      var: replicated_status
   - name: replicated console key and cert
-    shell: replicated console cert set {{ fqdn }} /tmp/platform.key /tmp/platform.crt
- # - name: replicated console password
- #   shell: echo {{ item }} | replicatedctl console-auth import
- #   with_items:
- #     - '{\"Password\"\: {\"Password\": \"{{ console_password }}\" }}'
-  # - name: replicated license
-  #   shell: replicatedctl license-load < /tmp/*.rli
-  # - name: replicated preflight check
-  #   shell: replicatedctl preflight run
-  # - name: replicated apply app
-  #   shell: replicatedctl app apply-config
+    command: "replicated console cert set {{ fqdn }} /tmp/platform.key /tmp/platform.crt"
+    register: resultkey
+    retries: 5
+    delay: 10
+    until: resultkey is not failed
+    when: replicated_status.failed == false
+  - name: replicated license
+    raw: "replicatedctl license-load < /tmp/test.rli"
+    args:
+      executable: /bin/bash
+    when: resultcopy is not failed
+  - name: console_pass
+    copy:
+      dest: /tmp/pass.yaml
+      content: |
+        Password:
+          Password: "{{ console_password }}"
+  - name: replicate console password
+    raw: "cat /tmp/pass.yaml |replicatedctl console-auth import --format yaml"
+    args:
+      executable: /bin/bash
+  - name: replicated preflight check
+    tags: replicated
+    shell: "replicatedctl preflight run"
+    args:
+      executable: /bin/bash
+  - name: app-conf
+    copy:
+      dest: /tmp/app.yaml
+      content: |
+        https_enabled:
+          value: '1'
+        nginx_external_port:
+          value: '80'
+        tls_version": {
+          value: "TLSv1.2"
+        }
+  - name: console https
+    raw: "replicatedctl app-config import --format yaml < /tmp/app.yaml"
+  - name: replicated apply app
+    tags: replicated
+    shell: "replicatedctl app apply-config"
+    args:
+      executable: /bin/bash
+  - name: clean up keys
+    file: "{{ item }}"
+    state: absent
+    with_items:
+      - /tmp/app.yaml
+      - /tmp/pass.yaml
+      - /tmp/test.rli
+      - /tmp/replicated.exp
+      - /tmp/platform.crt
+      - /tmp/platform.key
 
 #ybplatform register api
 #ybplatform cloud provider api
+#ybplatform universe api 1) create 2) delete -> need to clean up universe resources before terraform destroy.

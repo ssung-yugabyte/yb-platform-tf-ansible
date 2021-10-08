@@ -24,7 +24,7 @@ resource "google_compute_firewall" "yb_connectors" {
   network = google_compute_network.vpc.id
   allow {
       protocol = "TCP"
-      ports = ["22","80","8800","9000","7000","9042","5433"]
+      ports = ["22","80","443","8800","9000","7000","9042","5433"]
   }
   source_ranges = [lookup(data.external.myipaddr.result,"ip")]
 }
