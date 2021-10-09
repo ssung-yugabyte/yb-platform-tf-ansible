@@ -24,5 +24,14 @@
     register: superadm
   - name: login superadm
     debug: "debug"
+  - name: get customer detail
+    debug: "debug"
+    register: customer_id
   - name: create cloud provider
     debug: "debug"
+    register: cloud_provider_uuid
+  - name: list cloud provider
+    debug: "debug"
+  - name: create a universe
+    debug: "debug"
+  
