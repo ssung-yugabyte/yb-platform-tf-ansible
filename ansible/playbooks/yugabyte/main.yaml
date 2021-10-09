@@ -1,0 +1,28 @@
+---
+- hosts: ybware
+  gather_facts: yes
+  gather_timeout: 120
+  become: yes
+  tasks:
+  - name: test connection
+    uri:
+      url: https://{{ ip }}
+      return_content: yess
+    register: connected
+    failed_when: 'not ready'
+  - name: register superadm
+    uri:
+      url: https://{{ ip }}
+      method: POST
+      body_format: form-urlencoded
+      body:
+        name: {{ adm_name }}
+        password: {{ adm_password }}
+        comfirm_password: {{ adm_password }}
+        enter: 
+      status_code: 302
+    register: superadm
+  - name: login superadm
+    debug: "debug"
+  - name: create cloud provider
+    debug: "debug"

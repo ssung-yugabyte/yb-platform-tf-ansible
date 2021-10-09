@@ -9,3 +9,8 @@ variable "vpc_network" {
 variable "identifier" {
   type = string
 }
+
+variable "default-subnets" {
+  type = bool
+  default = false
+}

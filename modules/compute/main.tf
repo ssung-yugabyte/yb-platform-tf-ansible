@@ -15,10 +15,6 @@ resource "google_compute_address" "platform_ip" {
     name = "platform-ip"
     region = var.region
 }
-resource "google_compute_address" "freeipa_ip" {
-    name = "freeeipa-ip"
-    region = var.region
-}
 resource "google_compute_instance" "yb-platform" {
   name = "${local.name}-platform"
   machine_type = var.gce_vm.instance_type
@@ -37,7 +33,7 @@ resource "google_compute_instance" "yb-platform" {
   }
 
   network_interface {
-      subnetwork = var.subnetwork
+    network = var.vpc
       access_config {
         nat_ip = google_compute_address.platform_ip.address
       }
@@ -61,9 +57,6 @@ resource "google_compute_instance" "freeipa" {
     sshKeys = "${var.ssh_user}:${file(var.ssh_public_key)}"
   }
   network_interface {
-      subnetwork = var.subnetwork
-      access_config {
-        nat_ip = google_compute_address.freeipa_ip.address
-      }
+    network = var.vpc
   }
 }

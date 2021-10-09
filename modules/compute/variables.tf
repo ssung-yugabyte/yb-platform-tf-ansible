@@ -34,6 +34,11 @@ variable "gce_vm" {
 
 }
 
+variable "vpc" {
+  type = string
+  default = "default"
+}
 variable "subnetwork" {
   type = string
+  default = ""
 }

@@ -26,9 +26,9 @@ module "dns" {
 module "compute" {
     source = "./modules/compute"
     identifier = var.identifier
+    vpc = module.network.vpc
     region = var.regions[0]
     zone = var.zone
-    subnetwork = module.network.control_subnet
     ssh_user = var.ssh_user
     ssh_public_key = var.ssh_public_key
 }
@@ -69,4 +69,21 @@ resource "null_resource" "andible_playbook_os" {
             console_password = module.compute.console_password
         }
     }
+
+    # provisioner "local-exec" {
+    #     command = "ansible-playbook ansible/playbooks/replicated/main.yaml  --extra-vars=\"license=$license console_password=$console_password fqdn=$fqdn public_ip=$public_ip\""
+        #   environment = {
+        #     license = var.license_key
+        #     fqdn = module.dns.platform_dns
+        #     public_ip = module.compute.public_ip
+        #     console_password = module.compute.console_password
+        # }
+    # }
+
+    # provisioner "local-exec" {
+    #     command = "ansible-playbook ansible/playbooks/yugabyte/main.yaml --extra-vars=\"ip=$public_ip\""
+    #     environment = {
+    #         public_ip = module.compute.public_ip
+    #     }
+    # }
 }
